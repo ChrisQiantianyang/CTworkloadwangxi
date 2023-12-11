@@ -31,75 +31,13 @@ def base_parser():
     return config
 
 def load_data(config):
+    pass
 
-    if config.proxy == 'Google':
-        folder = GOOGLE_FORECASTING_DATA
-    elif config.proxy == 'Combined':
-        folder = COMBINED_FORECASTING_DATA
-
-    train_feature =  pd.read_csv(f'{folder}/RF_data/RF_{config.proxy}_{config.gold_standard}_train_feature.csv', index_col=[0])
-    test_feature =  pd.read_csv(f'{folder}/RF_data/RF_{config.proxy}_{config.gold_standard}_test_feature.csv', index_col=[0])
-
-    train_label = pd.read_csv(f'{folder}/RF_data/RF_{config.proxy}_{config.gold_standard}_train_label.csv', index_col=[0])
-    test_label = pd.read_csv(f'{folder}/RF_data/RF_{config.proxy}_{config.gold_standard}_test_label.csv', index_col=[0])
-
-    return train_feature, train_label, test_feature, test_label
-
-def timeseries_cv(config, training_set:pd.DataFrame, forecasting_horizon: list) -> list:
-    """_summary_
-
-    Args:
-        training_set (pd.DataFrame): _description_
-        initial_window (int): _description_
-        forecasting_horizon (list): _description_
-        step_size (int): _description_
-
-    Returns:
-        list: _description_
-    """
-    cv = SlidingWindowSplitter(window_length=config.cv_initial_window, fh=forecasting_horizon, step_length=config.cv_step_length)
-    index = training_set.index
-    timeseries_cv = []
-    for train_idx, val_idx in cv.split(index):
-        timeseries_cv.append((list(train_idx), list(val_idx)))
-    return timeseries_cv
+def run_arima(config):
+    pass
 
 
-def objective(trial, config):
-    """ objective function"""
-    
-    # main hyperparameters
-    config.n_estimators = trial.suggest_categorical('n_estimators', [200, 300, 400, 500, 600])
-    config.min_samples_split = trial.suggest_categorical('min_samples_split', [2, 5, 10])
-    config.max_depth = trial.suggest_int('max_depth', 5, 50, step=10)
-    config.min_samples_leaf = trial.suggest_categorical('min_samples_leaf', [1, 2, 4])
-    config.max_features = trial.suggest_categorical('max_features', ['log2', 'sqrt'])
-    
-    # define Random Forest classifier
-    RF = RandomForestClassifier(n_estimators=config.n_estimators,
-                                max_depth=config.max_depth,
-                                min_samples_split=config.min_samples_split,
-                                min_samples_leaf=config.min_samples_leaf,
-                                max_features=config.max_features)
-    # load dataset
-    train_sliding_feature, train_sliding_label, _, _ = load_data(config)
-    
 
-    # define time series cross validation
-    forecasting_horizon = list(range(config.training_length + config.forecasting_horizon - 1, config.training_length + config.forecasting_horizon - 1 + config.cv_test_window))
-    cv = timeseries_cv(config, train_sliding_feature, forecasting_horizon=forecasting_horizon)
-    print(len(cv))
-    # define scores: maximize accuracy
-    scores = model_selection.cross_val_score(RF, train_sliding_feature, train_sliding_label.values.ravel(),
-                                           n_jobs=-1, cv=cv, scoring='accuracy')
-    
-    return np.mean(scores)
-
-
-def max_trial_callback(study, trial):
-    n_complete = len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE or t.state == optuna.trial.TrialState.RUNNING])
-    if n_complete > config.number_trial - 1:
-        study.stop()
 
 
 if __name__ == '__main__':
