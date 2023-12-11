@@ -1,13 +1,9 @@
 # Scripts for ARIMA forecasting model.
 
-from startup import GOOGLE_FORECASTING_DATA, COMBINED_FORECASTING_DATA
+from pmdarima import auto_arima
 import pandas as pd
 import os
 import numpy as np
-from sklearn import model_selection
-from sklearn.ensemble import RandomForestClassifier
-from sktime.forecasting.model_selection import SlidingWindowSplitter
-import optuna
 
 import warnings
 warnings.filterwarnings("ignore")
